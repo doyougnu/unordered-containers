@@ -76,7 +76,11 @@ import Control.Applicative (Applicative (..), (<$>))
 #endif
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData (..))
-import GHC.Exts(Int(..), Int#, reallyUnsafePtrEquality#, tagToEnum#, unsafeCoerce#, State#)
+import GHC.Exts(Int(..), Int#, reallyUnsafePtrEquality#, tagToEnum#
+#if __GLASGOW_HASKELL__ < 903
+               , unsafeCoerce#
+#endif
+               , State#)
 import GHC.ST (ST(..))
 import Control.Monad.ST (stToIO)
 
@@ -209,7 +213,12 @@ instance Show a => Show (Array a) where
 -- Array wrappers, but it's still slightly bogus.
 unsafeSameArray :: Array a -> Array b -> Bool
 unsafeSameArray (Array xs) (Array ys) =
-  tagToEnum# (unsafeCoerce# reallyUnsafePtrEquality# xs ys)
+  tagToEnum#
+#if __GLASGOW_HASKELL__ >= 903
+    (reallyUnsafePtrEquality# xs ys)
+#else
+    (unsafeCoerce# reallyUnsafePtrEquality# xs ys)
+#endif
 
 sameArray1 :: (a -> b -> Bool) -> Array a -> Array b -> Bool
 sameArray1 eq !xs0 !ys0
