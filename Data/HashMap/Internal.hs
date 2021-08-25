@@ -143,9 +143,6 @@ import Data.Monoid (Monoid(mempty, mappend))
 import Data.Traversable (Traversable(..))
 import Data.Word (Word)
 #endif
-#if __GLASGOW_HASKELL__ >= 711
-import Data.Semigroup (Semigroup((<>)))
-#endif
 import Control.DeepSeq (NFData(rnf))
 import Control.Monad.ST (ST)
 import Data.Bits ((.&.), (.|.), complement, popCount, unsafeShiftL, unsafeShiftR)

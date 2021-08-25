@@ -98,9 +98,7 @@ import Data.HashMap.Internal
   ( HashMap, foldMapWithKey, foldlWithKey, foldrWithKey
   , equalKeys, equalKeys1)
 import Data.Hashable (Hashable(hashWithSalt))
-#if __GLASGOW_HASKELL__ >= 711
-import Data.Semigroup (Semigroup(..))
-#elif __GLASGOW_HASKELL__ < 709
+#if __GLASGOW_HASKELL__ < 709
 import Data.Monoid (Monoid(..))
 #endif
 import GHC.Exts (build)
@@ -126,8 +124,6 @@ import qualified Data.Hashable.Lifted as H
 #if MIN_VERSION_deepseq(1,4,3)
 import qualified Control.DeepSeq as NF
 #endif
-
-import Data.Functor ((<$))
 
 -- | A set of values.  A set cannot contain duplicate values.
 newtype HashSet a = HashSet {
