@@ -10,7 +10,7 @@ import Data.Hashable (Hashable, hash)
 import qualified Data.ByteString as BS
 import qualified "hashmap" Data.HashMap as IHM
 import qualified Data.HashMap.Strict as HM
-import qualified Data.IntMap as IM
+import qualified Data.IntMap.Strict as IM
 import qualified Data.Map as M
 import Data.List (foldl')
 import Data.Maybe (fromMaybe)
@@ -47,6 +47,8 @@ data Env = Env {
     alters11 :: ![(Int,Int)], -- for alterInsert tests
     alters23 :: ![(Int,Int)], -- for alterInsert tests
     alters32 :: ![(Int,Int)], -- for alterInsert tests
+    alters2030 :: ![(Int,Int)], -- for alterInsert tests
+    alters3020 :: ![(Int,Int)], -- for alterInsert tests
     alters110 :: ![(Int,Int)], -- for alterInsert tests
     alters101 :: ![(Int,Int)], -- for alterInsert tests
     alters1001 :: ![(Int,Int)], -- for alterInsert tests
@@ -86,7 +88,7 @@ data Env = Env {
 
 setupEnv :: IO Env
 setupEnv = do
-    let n = 2^(12 :: Int)
+    let n = 2^(17 :: Int)
 
         elems   = zip keys [1..n]
         keys    = US.rnd 8 n
@@ -99,6 +101,8 @@ setupEnv = do
         alters11   = UI.split 1 1   elemsI (zip keysI [0..])
         alters23   = UI.split 2 3   elemsI (zip keysI [0..])
         alters32   = UI.split 3 2   elemsI (zip keysI [0..])
+        alters2030 = UI.split 20 30   elemsI (zip keysI [0..])
+        alters3020 = UI.split 30 20   elemsI (zip keysI [0..])
         alters110  = UI.split 1 10  elemsI (zip keysI [0..])
         alters101  = UI.split 10 1  elemsI (zip keysI [0..])
         alters1001 = UI.split 100 1 elemsI (zip keysI [0..])
@@ -240,6 +244,8 @@ main =
         bench "alter11" $ whnf (alterInsertLookupIM   imAlternate)  alters11
       , bench "alter23" $ whnf (alterInsertLookupIM   imAlternate)  alters23
       , bench "alter32" $ whnf (alterInsertLookupIM   imAlternate)  alters32
+      , bench "alter2030" $ whnf (alterInsertLookupIM   imAlternate)  alters2030
+      , bench "alter3020" $ whnf (alterInsertLookupIM   imAlternate)  alters3020
       , bench "alter101" $ whnf (alterInsertLookupIM  imAlternate)  alters101
       , bench "alter110" $ whnf (alterInsertLookupIM  imAlternate)  alters110
       , bench "alter1001" $ whnf (alterInsertLookupIM imAlternate)  alters1001
@@ -262,6 +268,8 @@ main =
         [ bench "alter11" $ whnf (alterInsertLookupHM   hmAlternate)  alters11
         , bench "alter23" $ whnf (alterInsertLookupHM   hmAlternate)  alters23
         , bench "alter32" $ whnf (alterInsertLookupHM   hmAlternate)  alters32
+        , bench "alter2030" $ whnf (alterInsertLookupHM   hmAlternate)  alters2030
+        , bench "alter3020" $ whnf (alterInsertLookupHM   hmAlternate)  alters3020
         , bench "alter101" $ whnf (alterInsertLookupHM  hmAlternate)  alters101
         , bench "alter110" $ whnf (alterInsertLookupHM  hmAlternate)  alters110
         , bench "alter1001" $ whnf (alterInsertLookupHM hmAlternate)  alters1001

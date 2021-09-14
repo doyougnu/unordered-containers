@@ -4,6 +4,7 @@
 module Util.Int where
 
 import System.Random (mkStdGen, randomRs)
+import Control.DeepSeq (force)
 
 -- | Generate a number of uniform random integers in the interval
 -- @[0..upper]@.
@@ -20,7 +21,7 @@ rnd' :: Int  -- ^ Upper bound (inclusive)
 rnd' upper num = take num $ randomRs (0, upper) $ mkStdGen 5678
 
 split :: Int -> Int -> [(Int,Int)] -> [(Int,Int)] -> [(Int,Int)]
-split lFreq rFreq = goL
+split lFreq rFreq = (force .) . goL
   where
     goL [] _    = []
     goL _  []   = []
