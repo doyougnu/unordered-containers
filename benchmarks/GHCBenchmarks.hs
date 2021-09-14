@@ -1,10 +1,11 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP, DeriveAnyClass, DeriveGeneric, GADTs, PackageImports, RecordWildCards #-}
 
 module Main where
 
 import Control.DeepSeq
 import Gauge (bench, bgroup, defaultMain, env, nf, whnf)
-import Data.Bits ((.&.))
+
 import Data.Functor.Identity
 import Data.Hashable (Hashable, hash)
 import qualified Data.ByteString as BS
@@ -16,6 +17,8 @@ import Data.List (foldl')
 import Data.Maybe (fromMaybe)
 import GHC.Generics (Generic)
 import Prelude hiding (lookup)
+import Data.Random as R
+import Data.Random.List as RL
 
 import qualified Util.ByteString as UBS
 import qualified Util.Int as UI
@@ -41,6 +44,7 @@ data Env = Env {
     elemsBS :: ![(BS.ByteString, Int)],
     keysBS  :: ![BS.ByteString],
     elemsI  :: ![(Int, Int)],
+    elemsR  :: ![(Int, Int)],
     keysI   :: ![Int],
     elemsI2 :: ![(Int, Int)],  -- for union
 
@@ -53,6 +57,9 @@ data Env = Env {
     alters101 :: ![(Int,Int)], -- for alterInsert tests
     alters1001 :: ![(Int,Int)], -- for alterInsert tests
     alters1100 :: ![(Int,Int)], -- for alterInsert tests
+    alters100001 :: ![(Int,Int)], -- for alterInsert tests
+    alters110000 :: ![(Int,Int)], -- for alterInsert tests
+
     hmAlternate :: !(HM.HashMap Int Int),
     imAlternate :: !(IM.IntMap Int),
 
@@ -98,16 +105,6 @@ setupEnv = do
         keysI   = UI.rnd (n+n) n
         elemsI2 = zip [n `div` 2..n + n `div` 2] [1..n]  -- for union
 
-        alters11   = UI.split 1 1   elemsI (zip keysI [0..])
-        alters23   = UI.split 2 3   elemsI (zip keysI [0..])
-        alters32   = UI.split 3 2   elemsI (zip keysI [0..])
-        alters2030 = UI.split 20 30   elemsI (zip keysI [0..])
-        alters3020 = UI.split 30 20   elemsI (zip keysI [0..])
-        alters110  = UI.split 1 10  elemsI (zip keysI [0..])
-        alters101  = UI.split 10 1  elemsI (zip keysI [0..])
-        alters1001 = UI.split 100 1 elemsI (zip keysI [0..])
-        alters1100 = UI.split 1 100 elemsI (zip keysI [0..])
-
         keys'    = US.rnd' 8 n
         keysBS'  = UBS.rnd' 8 n
         keysI'   = UI.rnd' (n+n) n
@@ -118,9 +115,6 @@ setupEnv = do
         elemsDup   = zip keysDup [1..n]
         elemsDupBS = zip keysDupBS [1..n]
         elemsDupI  = zip keysDupI [1..n]
-
-        hmAlternate = HM.fromList (take (n `div` 2) elemsI)
-        imAlternate = IM.fromList (take (n `div` 2) elemsI)
 
         hm          = HM.fromList elems
         hmSubset    = HM.fromList (takeSubset n elems)
@@ -139,6 +133,23 @@ setupEnv = do
         ihmSubset   = IHM.fromList (takeSubset n elems)
         ihmbs       = IHM.fromList elemsBS
         ihmbsSubset = IHM.fromList (takeSubset n elemsBS)
+
+    !elemsR <- R.runRVar (RL.shuffle elemsI) R.StdRandom
+    let hmAlternate = HM.fromList $! take (n `div` 2) elemsR
+        imAlternate = IM.fromList $! take (n `div` 2) elemsR
+
+        alters11   = UI.split 1 1     elemsI (zip keysI [0..])
+        alters23   = UI.split 2 3     elemsI (zip keysI [0..])
+        alters32   = UI.split 3 2     elemsI (zip keysI [0..])
+        alters2030 = UI.split 20 30   elemsI (zip keysI [0..])
+        alters3020 = UI.split 30 20   elemsI (zip keysI [0..])
+        alters110  = UI.split 1 10    elemsI (zip keysI [0..])
+        alters101  = UI.split 10 1    elemsI (zip keysI [0..])
+        alters1001 = UI.split 100 1   elemsI (zip keysI [0..])
+        alters1100 = UI.split 1 100   elemsI (zip keysI [0..])
+        alters100001 = UI.split 10000 1   elemsI (zip keysI [0..])
+        alters110000 = UI.split 1 10000   elemsI (zip keysI [0..])
+
     return Env{..}
   where
     takeSubset n elements =
@@ -250,6 +261,8 @@ main =
       , bench "alter110" $ whnf (alterInsertLookupIM  imAlternate)  alters110
       , bench "alter1001" $ whnf (alterInsertLookupIM imAlternate)  alters1001
       , bench "alter1100" $ whnf (alterInsertLookupIM imAlternate)  alters1100
+      , bench "alter100001" $ whnf (alterInsertLookupIM imAlternate)  alters100001
+      , bench "alter110000" $ whnf (alterInsertLookupIM imAlternate)  alters110000
       -- , bench "lookup-miss" $ whnf (lookupIM keysI') im
       -- , bench "insert" $ whnf (insertIM elemsI) IM.empty
       -- , bench "insert-dup" $ whnf (insertIM elemsI) im
@@ -265,7 +278,7 @@ main =
       [ -- * Basic interface
 
         bgroup "alternating"
-        [ bench "alter11" $ whnf (alterInsertLookupHM   hmAlternate)  alters11
+        [ --bench "alter11" $ whnf (alterInsertLookupHM   hmAlternate)  alters11
         , bench "alter23" $ whnf (alterInsertLookupHM   hmAlternate)  alters23
         , bench "alter32" $ whnf (alterInsertLookupHM   hmAlternate)  alters32
         , bench "alter2030" $ whnf (alterInsertLookupHM   hmAlternate)  alters2030
@@ -274,6 +287,8 @@ main =
         , bench "alter110" $ whnf (alterInsertLookupHM  hmAlternate)  alters110
         , bench "alter1001" $ whnf (alterInsertLookupHM hmAlternate)  alters1001
         , bench "alter1100" $ whnf (alterInsertLookupHM hmAlternate)  alters1100
+        , bench "alter100001" $ whnf (alterInsertLookupHM hmAlternate)  alters100001
+        , bench "alter110000" $ whnf (alterInsertLookupHM hmAlternate)  alters110000
         ]
       -- ,
       --   bgroup "lookup"

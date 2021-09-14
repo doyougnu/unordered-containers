@@ -228,6 +228,8 @@ benchmark ghc-benchmarks
     hashmap,
     mtl,
     random,
+    random-fu,
+    random-extras,
     unordered-containers
 
   default-language: Haskell2010
