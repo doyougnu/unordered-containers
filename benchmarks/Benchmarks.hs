@@ -163,51 +163,6 @@ main = do
             ]
           ]
 
-          -- ** Map from the hashmap package
-        , env setupEnv $ \ ~(Env{..}) ->
-          bgroup "hashmap/Map"
-          [ bgroup "lookup"
-            [ bench "String" $ whnf (lookupIHM keys) ihm
-            , bench "ByteString" $ whnf (lookupIHM keysBS) ihmbs
-            ]
-          , bgroup "lookup-miss"
-            [ bench "String" $ whnf (lookupIHM keys') ihm
-            , bench "ByteString" $ whnf (lookupIHM keysBS') ihmbs
-            ]
-          , bgroup "insert"
-            [ bench "String" $ whnf (insertIHM elems) IHM.empty
-            , bench "ByteStringString" $ whnf (insertIHM elemsBS) IHM.empty
-            ]
-          , bgroup "insert-dup"
-            [ bench "String" $ whnf (insertIHM elems) ihm
-            , bench "ByteStringString" $ whnf (insertIHM elemsBS) ihmbs
-            ]
-          , bgroup "delete"
-            [ bench "String" $ whnf (deleteIHM keys) ihm
-            , bench "ByteString" $ whnf (deleteIHM keysBS) ihmbs
-            ]
-          , bgroup "delete-miss"
-            [ bench "String" $ whnf (deleteIHM keys') ihm
-            , bench "ByteString" $ whnf (deleteIHM keysBS') ihmbs
-            ]
-          , bgroup "size"
-            [ bench "String" $ whnf IHM.size ihm
-            , bench "ByteString" $ whnf IHM.size ihmbs
-            ]
-          , bgroup "fromList"
-            [ bench "String" $ whnf IHM.fromList elems
-            , bench "ByteString" $ whnf IHM.fromList elemsBS
-            ]
-          , bgroup "isSubmapOf"
-            [ bench "String" $ whnf (IHM.isSubmapOf ihmSubset) ihm
-            , bench "ByteString" $ whnf (IHM.isSubmapOf ihmbsSubset) ihmbs
-            ]
-          , bgroup "hash"
-            [ bench "String" $ whnf hash hm
-            , bench "ByteString" $ whnf hash hmbs
-            ]
-          ]
-
           -- ** IntMap
         , env setupEnv $ \ ~(Env{..}) ->
           bgroup "IntMap"

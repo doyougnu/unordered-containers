@@ -75,14 +75,16 @@ import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData (..))
 import GHC.Exts(Int(..), reallyUnsafePtrEquality#, tagToEnum#, unsafeCoerce#)
 import GHC.ST (ST(..))
-import Control.Monad.ST (runST, stToIO)
+import GHC.IO (IO(..), unsafePerformIO)
+import Control.Monad.ST (runST, stToIO, RealWorld)
 
 import Prelude hiding (filter, foldMap, foldr, foldl, length, map, read, traverse, all)
 
 import GHC.Exts (SmallArray#, newSmallArray#, readSmallArray#, writeSmallArray#,
                  indexSmallArray#, unsafeFreezeSmallArray#, unsafeThawSmallArray#,
                  SmallMutableArray#, sizeofSmallArray#, copySmallArray#, thawSmallArray#,
-                 sizeofSmallMutableArray#, copySmallMutableArray#, cloneSmallMutableArray#)
+                 sizeofSmallMutableArray#, copySmallMutableArray#, cloneSmallMutableArray#,
+                 prefetchSmallArray0#, Int#, State#)
 
 #if defined(ASSERTS)
 import qualified Prelude
@@ -92,7 +94,7 @@ import qualified Prelude
 import qualified Control.DeepSeq as NF
 #endif
 
-import Control.Monad ((>=>))
+import Control.Monad ((>=>), void)
 
 #if defined(ASSERTS)
 -- This fugly hack is brought by GHC's apparent reluctance to deal
@@ -346,8 +348,21 @@ unsafeUpdateM ary idx b =
            return ()
 {-# INLINE unsafeUpdateM #-}
 
+
+prefetchSmallArrayBy
+  :: (SmallArray# a -> Int# -> State# RealWorld -> State# RealWorld)
+  -> Array a
+  -> IO (Array a)
+prefetchSmallArrayBy prefetch (Array sa#)= IO (\s -> (# prefetch sa# 0# s, Array sa# #))
+
+-- prefetchSmallArray :: Array a -> IO ()
+-- prefetchSmallArray = void . prefetchSmallArrayBy prefetchSmallArray0#
+
+prefetchSmallArray :: Array a -> Array a
+prefetchSmallArray = unsafePerformIO . prefetchSmallArrayBy prefetchSmallArray0#
+
 foldl' :: (b -> a -> b) -> b -> Array a -> b
-foldl' f = \ z0 ary0 -> go ary0 (length ary0) 0 z0
+foldl' f = \ z0 ary0 -> go (prefetchSmallArray ary0) (length ary0) 0 z0
   where
     go ary n i !z
         | i >= n = z
@@ -357,7 +372,7 @@ foldl' f = \ z0 ary0 -> go ary0 (length ary0) 0 z0
 {-# INLINE foldl' #-}
 
 foldr' :: (a -> b -> b) -> b -> Array a -> b
-foldr' f = \ z0 ary0 -> go ary0 (length ary0 - 1) z0
+foldr' f = \ z0 ary0 -> go (prefetchSmallArray ary0) (length ary0 - 1) z0
   where
     go !_ary (-1) z = z
     go !ary i !z
