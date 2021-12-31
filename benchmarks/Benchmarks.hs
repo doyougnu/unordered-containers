@@ -3,12 +3,12 @@
 module Main where
 
 import Control.DeepSeq
-import Gauge (bench, bgroup, defaultMain, env, nf, whnf)
+import Test.Tasty.Bench (bench, bgroup, defaultMain, env, nf, whnf)
 import Data.Bits ((.&.))
 import Data.Functor.Identity
 import Data.Hashable (Hashable, hash)
 import qualified Data.ByteString as BS
-import qualified "hashmap" Data.HashMap as IHM
+-- import qualified "hashmap" Data.HashMap as IHM
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
@@ -63,16 +63,16 @@ data Env = Env {
     mbs         :: !(M.Map BS.ByteString Int),
     mbsSubset   :: !(M.Map BS.ByteString Int),
     im          :: !(IM.IntMap Int),
-    imSubset    :: !(IM.IntMap Int),
-    ihm         :: !(IHM.Map String Int),
-    ihmSubset   :: !(IHM.Map String Int),
-    ihmbs       :: !(IHM.Map BS.ByteString Int),
-    ihmbsSubset :: !(IHM.Map BS.ByteString Int)
+    imSubset    :: !(IM.IntMap Int)
+    -- ihm         :: !(IHM.Map String Int),
+    -- ihmSubset   :: !(IHM.Map String Int),
+    -- ihmbs       :: !(IHM.Map BS.ByteString Int),
+    -- ihmbsSubset :: !(IHM.Map BS.ByteString Int)
     } deriving (Generic, NFData)
 
 setupEnv :: IO Env
 setupEnv = do
-    let n = 2^(12 :: Int)
+    let n = 2^(18 :: Int)
 
         elems   = zip keys [1..n]
         keys    = US.rnd 8 n
@@ -106,10 +106,10 @@ setupEnv = do
         mbsSubset   = M.fromList (takeSubset n elemsBS)
         im          = IM.fromList elemsI
         imSubset    = IM.fromList (takeSubset n elemsI)
-        ihm         = IHM.fromList elems
-        ihmSubset   = IHM.fromList (takeSubset n elems)
-        ihmbs       = IHM.fromList elemsBS
-        ihmbsSubset = IHM.fromList (takeSubset n elemsBS)
+        -- ihm         = IHM.fromList elems
+        -- ihmSubset   = IHM.fromList (takeSubset n elems)
+        -- ihmbs       = IHM.fromList elemsBS
+        -- ihmbsSubset = IHM.fromList (takeSubset n elemsBS)
     return Env{..}
   where
     takeSubset n elements =
@@ -124,60 +124,60 @@ main = do
           env setupEnv $ \ ~(Env{..}) ->
           -- * Comparison to other data structures
           -- ** Map
-          bgroup "Map"
-          [ bgroup "lookup"
-            [ bench "String" $ whnf (lookupM keys) m
-            , bench "ByteString" $ whnf (lookupM keysBS) mbs
-            ]
-          , bgroup "lookup-miss"
-            [ bench "String" $ whnf (lookupM keys') m
-            , bench "ByteString" $ whnf (lookupM keysBS') mbs
-            ]
-          , bgroup "insert"
-            [ bench "String" $ whnf (insertM elems) M.empty
-            , bench "ByteStringString" $ whnf (insertM elemsBS) M.empty
-            ]
-          , bgroup "insert-dup"
-            [ bench "String" $ whnf (insertM elems) m
-            , bench "ByteStringString" $ whnf (insertM elemsBS) mbs
-            ]
-          , bgroup "delete"
-            [ bench "String" $ whnf (deleteM keys) m
-            , bench "ByteString" $ whnf (deleteM keysBS) mbs
-            ]
-          , bgroup "delete-miss"
-            [ bench "String" $ whnf (deleteM keys') m
-            , bench "ByteString" $ whnf (deleteM keysBS') mbs
-            ]
-          , bgroup "size"
-            [ bench "String" $ whnf M.size m
-            , bench "ByteString" $ whnf M.size mbs
-            ]
-          , bgroup "fromList"
-            [ bench "String" $ whnf M.fromList elems
-            , bench "ByteString" $ whnf M.fromList elemsBS
-            ]
-          , bgroup "isSubmapOf"
-            [ bench "String" $ whnf (M.isSubmapOf mSubset) m
-            , bench "ByteString" $ whnf (M.isSubmapOf mbsSubset) mbs
-            ]
-          ]
+        --   bgroup "Map"
+        --   [ bgroup "lookup"
+        --     [ bench "String" $ whnf (lookupM keys) m
+        --     , bench "ByteString" $ whnf (lookupM keysBS) mbs
+        --     ]
+        --   , bgroup "lookup-miss"
+        --     [ bench "String" $ whnf (lookupM keys') m
+        --     , bench "ByteString" $ whnf (lookupM keysBS') mbs
+        --     ]
+        --   , bgroup "insert"
+        --     [ bench "String" $ whnf (insertM elems) M.empty
+        --     , bench "ByteStringString" $ whnf (insertM elemsBS) M.empty
+        --     ]
+        --   , bgroup "insert-dup"
+        --     [ bench "String" $ whnf (insertM elems) m
+        --     , bench "ByteStringString" $ whnf (insertM elemsBS) mbs
+        --     ]
+        --   , bgroup "delete"
+        --     [ bench "String" $ whnf (deleteM keys) m
+        --     , bench "ByteString" $ whnf (deleteM keysBS) mbs
+        --     ]
+        --   , bgroup "delete-miss"
+        --     [ bench "String" $ whnf (deleteM keys') m
+        --     , bench "ByteString" $ whnf (deleteM keysBS') mbs
+        --     ]
+        --   , bgroup "size"
+        --     [ bench "String" $ whnf M.size m
+        --     , bench "ByteString" $ whnf M.size mbs
+        --     ]
+        --   , bgroup "fromList"
+        --     [ bench "String" $ whnf M.fromList elems
+        --     , bench "ByteString" $ whnf M.fromList elemsBS
+        --     ]
+        --   , bgroup "isSubmapOf"
+        --     [ bench "String" $ whnf (M.isSubmapOf mSubset) m
+        --     , bench "ByteString" $ whnf (M.isSubmapOf mbsSubset) mbs
+        --     ]
+        --   ]
 
-          -- ** IntMap
-        , env setupEnv $ \ ~(Env{..}) ->
-          bgroup "IntMap"
-          [ bench "lookup" $ whnf (lookupIM keysI) im
-          , bench "lookup-miss" $ whnf (lookupIM keysI') im
-          , bench "insert" $ whnf (insertIM elemsI) IM.empty
-          , bench "insert-dup" $ whnf (insertIM elemsI) im
-          , bench "delete" $ whnf (deleteIM keysI) im
-          , bench "delete-miss" $ whnf (deleteIM keysI') im
-          , bench "size" $ whnf IM.size im
-          , bench "fromList" $ whnf IM.fromList elemsI
-          , bench "isSubmapOf" $ whnf (IM.isSubmapOf imSubset) im
-          ]
+        --   -- ** IntMap
+        -- , env setupEnv $ \ ~(Env{..}) ->
+        --   bgroup "IntMap"
+        --   [ bench "lookup" $ whnf (lookupIM keysI) im
+        --   , bench "lookup-miss" $ whnf (lookupIM keysI') im
+        --   , bench "insert" $ whnf (insertIM elemsI) IM.empty
+        --   , bench "insert-dup" $ whnf (insertIM elemsI) im
+        --   , bench "delete" $ whnf (deleteIM keysI) im
+        --   , bench "delete-miss" $ whnf (deleteIM keysI') im
+        --   , bench "size" $ whnf IM.size im
+        --   , bench "fromList" $ whnf IM.fromList elemsI
+        --   , bench "isSubmapOf" $ whnf (IM.isSubmapOf imSubset) im
+        --   ]
 
-        , env setupEnv $ \ ~(Env{..}) ->
+          env setupEnv $ \ ~(Env{..}) ->
           bgroup "HashMap"
           [ -- * Basic interface
             bgroup "lookup"
@@ -417,26 +417,6 @@ deleteM xs m0 = foldl' (\m k -> M.delete k m) m0 xs
 ------------------------------------------------------------------------
 -- * Map from the hashmap package
 
-lookupIHM :: (Eq k, Hashable k, Ord k) => [k] -> IHM.Map k Int -> Int
-lookupIHM xs m = foldl' (\z k -> fromMaybe z (IHM.lookup k m)) 0 xs
-{-# SPECIALIZE lookupIHM :: [String] -> IHM.Map String Int -> Int #-}
-{-# SPECIALIZE lookupIHM :: [BS.ByteString] -> IHM.Map BS.ByteString Int
-                         -> Int #-}
-
-insertIHM :: (Eq k, Hashable k, Ord k) => [(k, Int)] -> IHM.Map k Int
-          -> IHM.Map k Int
-insertIHM xs m0 = foldl' (\m (k, v) -> IHM.insert k v m) m0 xs
-{-# SPECIALIZE insertIHM :: [(String, Int)] -> IHM.Map String Int
-                         -> IHM.Map String Int #-}
-{-# SPECIALIZE insertIHM :: [(BS.ByteString, Int)] -> IHM.Map BS.ByteString Int
-                         -> IHM.Map BS.ByteString Int #-}
-
-deleteIHM :: (Eq k, Hashable k, Ord k) => [k] -> IHM.Map k Int -> IHM.Map k Int
-deleteIHM xs m0 = foldl' (\m k -> IHM.delete k m) m0 xs
-{-# SPECIALIZE deleteIHM :: [String] -> IHM.Map String Int
-                         -> IHM.Map String Int #-}
-{-# SPECIALIZE deleteIHM :: [BS.ByteString] -> IHM.Map BS.ByteString Int
-                         -> IHM.Map BS.ByteString Int #-}
 
 ------------------------------------------------------------------------
 -- * IntMap
